@@ -42,7 +42,7 @@ function (CreateBaselineTest TEST_BASE_NAME GEN_TEST_NRANKS OUT_FILE FIXTURES_BA
   set_tests_properties(
     ${TEST_BASE_NAME}_baseline_cmp
     PROPERTIES
-    LABELS "baseline_cmp;baseline_gen"
+    LABELS "baseline_cmp"
     FIXTURES_REQUIRED ${FIXTURES_BASE_NAME}_np${TEST_RANK_END}_omp1)
 
   # Add the test that generated the baseline to the baseline_gen label, so scripts/test-all-eamxx
