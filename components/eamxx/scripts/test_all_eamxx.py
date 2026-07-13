@@ -255,7 +255,8 @@ class TestAllScream(object):
         sha = get_current_commit()
         baseline_file = (self.get_preexisting_baseline(test).parent)/"baseline_git_sha"
         with baseline_file.open("w", encoding="utf-8") as fd:
-            return fd.write(sha)
+            fd.write(sha)
+        baseline_file.chmod(0o664) # ensure group gets w permission
 
     ###############################################################################
     def get_test_dir(self, root, test):
@@ -517,6 +518,16 @@ class TestAllScream(object):
             test_dir = self.get_test_dir(self._work_dir,test)
             # Read list of nc files to copy to baseline dir
             baseline_dir = self.get_test_dir(self._baseline_dir, test)
+
+            os.umask(0o002)
+
+            # Nuke content of baseline_dir first (avoids issue with file metadata copy,
+            # which has some pb when running from inside a container).
+            if baseline_dir.exists():
+                shutil.rmtree(baseline_dir)
+
+            (baseline_dir / "data").mkdir(parents=True)
+
             with open(test_dir/"data/baseline_list","r",encoding="utf-8") as fd:
                 files = fd.read().splitlines()
 
@@ -530,12 +541,15 @@ class TestAllScream(object):
 
             # Some eamxx tests are designed to output directly in <bld_root>/data,
             # so just copy all content from there into the baseline dir
-            shutil.copytree(test_dir/"data",baseline_dir/"data",dirs_exist_ok=True)
+            shutil.copytree(test_dir/"data",baseline_dir/"data",dirs_exist_ok=True,copy_function=shutil.copyfile)
 
             # Store the sha used for baselines generation. This is only for record
             # keeping.
             self.set_baseline_file_sha(test)
             test.baselines_missing = False
+
+            baseline_dir.chmod(0o2775)
+            (baseline_dir / "data").chmod(0o2775)
 
         return success
 
